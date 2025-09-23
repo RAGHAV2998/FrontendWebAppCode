@@ -1,0 +1,163 @@
+/* src/SupplyChainMap.css */
+.supply-chain-map-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.controls-container {
+  background-color: var(--card-bg);
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  margin-bottom: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.selection-controls {
+  display: flex;
+  gap: 16px;
+  flex-grow: 1;
+}
+
+.dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.dropdown label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.dropdown select {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #fff;
+}
+
+.dropdown select:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.apply-btn, .clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.apply-btn {
+  background-color: var(--primary-accent);
+  color: white;
+}
+
+.apply-btn:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.apply-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.clear-btn {
+  background-color: #e5e7eb;
+  color: var(--text-primary);
+}
+
+.clear-btn:hover {
+  background-color: #d1d5db;
+}
+
+.visualization-container {
+  flex: 1;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.placeholder svg {
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.placeholder h2 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.loading-indicator, .error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.view-toggle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.view-toggle-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.view-toggle-header button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f3f4f6;
+  border: 1px solid #d1d5db;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.tree-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden; /* Ensures the SVG fits within the container */
+}
+
+.tree-wrapper svg {
+  width: 100%;
+  height: 100%;
+}
