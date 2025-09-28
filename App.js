@@ -46,9 +46,10 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/supply-chain-map" element={<SupplyChainMap />} />
+          <Route path="/regulatory-requirements-map" element={<ComingSoon />} />
+          <Route path="/risk-alerts" element={<ComingSoon />} />
           <Route path="/resilience-tracker" element={<ComingSoon />} />
           <Route path="/transportation" element={<ComingSoon />} />
-          <Route path="/risk-alerts" element={<ComingSoon />} />
           <Route path="/inventory" element={<ComingSoon />} />
           <Route path="/locations" element={<ComingSoon />} />
           <Route path="/analytics" element={<ComingSoon />} />
