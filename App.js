@@ -1,3 +1,5 @@
+// src/App.js
+
 import React, { useState, useCallback } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
@@ -8,8 +10,9 @@ import LandingPage from './LandingPage';
 import Home from './Home';
 import SupplyChainMap from './SupplyChainMap';
 import ComingSoon from './ComingSoon';
-import About from './About';     // <-- Import About
-import Contact from './Contact'; // <-- Import Contact
+import About from './About';
+import Contact from './Contact';
+import RiskAlerts from './RiskAlerts'; // <-- Import RiskAlerts
 
 // Style Imports
 import './App.css';
@@ -47,7 +50,7 @@ const App = () => {
           <Route path="/" element={<Home />} />
           <Route path="/supply-chain-map" element={<SupplyChainMap />} />
           <Route path="/regulatory-requirements-map" element={<ComingSoon />} />
-          <Route path="/risk-alerts" element={<ComingSoon />} />
+          <Route path="/risk-alerts" element={<RiskAlerts />} /> {/* <-- Update this route */}
           <Route path="/resilience-tracker" element={<ComingSoon />} />
           <Route path="/transportation" element={<ComingSoon />} />
           <Route path="/inventory" element={<ComingSoon />} />

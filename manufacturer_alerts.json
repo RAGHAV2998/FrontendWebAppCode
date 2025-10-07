@@ -1,0 +1,42 @@
+[
+  {
+    "id": "MA-01",
+    "type": "Supplier",
+    "manufacturer": "washington mills_north grafton_ma",
+    "risk_level": "Low",
+    "category": "Operational",
+    "details": "Minor delay in raw material shipment. Expected impact: < 24 hours.",
+    "date": "2025-09-28",
+    "location": "North Grafton, MA"
+  },
+  {
+    "id": "MA-02",
+    "type": "Supplier",
+    "manufacturer": "bulk apothecary_aurora_oh",
+    "risk_level": "High",
+    "category": "Regulatory",
+    "details": "New environmental compliance audit scheduled. Potential for temporary production halt.",
+    "date": "2025-09-27",
+    "location": "Aurora, OH"
+  },
+  {
+    "id": "MA-03",
+    "type": "Supplier",
+    "manufacturer": "bulk apothecary_aurora_oh",
+    "risk_level": "Medium",
+    "category": "Logistics",
+    "details": "Regional carrier reports a 15% increase in fuel surcharges, affecting transport costs.",
+    "date": "2025-09-26",
+    "location": "Aurora, OH"
+  },
+    {
+    "id": "MA-04",
+    "type": "Supplier",
+    "manufacturer": "cremer erzkontor north america inc._cincinnati_oh",
+    "risk_level": "Low",
+    "category": "Operational",
+    "details": "Scheduled maintenance on production line 2 completed ahead of schedule.",
+    "date": "2025-09-28",
+    "location": "Cincinnati, OH"
+  }
+]

@@ -1,0 +1,71 @@
+.land {
+    fill: #e5e7eb; /* gray-200 */
+    stroke: #ffffff;
+    stroke-width: 0.5px;
+}
+
+.hotspot {
+    stroke: rgba(255, 255, 255, 0.7);
+    stroke-width: 1.5px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.hotspot:hover {
+    transform: scale(1.5);
+    stroke: #ffffff;
+}
+
+.hotspot.high {
+    fill: #ef4444; /* red-500 */
+    animation: blink 1.5s infinite ease-in-out;
+}
+
+.hotspot.medium {
+    fill: #f59e0b; /* amber-500 */
+}
+
+.hotspot.low {
+    fill: #10b981; /* emerald-500 */
+}
+
+.map-tooltip {
+    position: absolute;
+    text-align: left;
+    width: 250px;
+    padding: 12px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(5px);
+    z-index: 1001;
+    transition: opacity 0.2s;
+}
+
+.map-tooltip h4 {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    color: #1f2937; /* gray-800 */
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+}
+
+.map-tooltip p {
+    margin: 0 0 4px 0;
+    line-height: 1.4;
+    color: #4b5563; /* gray-600 */
+}
+
+.map-tooltip .risk-high { color: #dc2626; font-weight: 600; }
+.map-tooltip .risk-medium { color: #d97706; font-weight: 600; }
+.map-tooltip .risk-low { color: #059669; font-weight: 600; }
+
+
+@keyframes blink {
+    50% {
+        opacity: 0.5;
+    }
+}

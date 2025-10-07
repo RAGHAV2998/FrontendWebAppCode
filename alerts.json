@@ -1,0 +1,85 @@
+[
+  {
+    "id": "G001",
+    "type": "Global",
+    "location": "Port of Shanghai",
+    "risk_level": "High",
+    "category": "Port Congestion",
+    "details": "Major congestion due to Typhoon Koinu aftermath. Expected delays of 72-96 hours for all container processing.",
+    "date": "2025-09-28",
+    "lat": 31.2304,
+    "lng": 121.4737
+  },
+  {
+    "id": "G002",
+    "type": "Global",
+    "location": "Port of Rotterdam",
+    "risk_level": "Medium",
+    "category": "Weather Alert",
+    "details": "North Sea storm warning issued. Potential for shipping lane closures in the next 48 hours.",
+    "date": "2025-09-27",
+    "lat": 51.9244,
+    "lng": 4.4777
+  },
+  {
+    "id": "G003",
+    "type": "Global",
+    "location": "Suez Canal",
+    "risk_level": "Low",
+    "category": "Geopolitical",
+    "details": "Minor transit fee adjustments announced. No immediate impact on shipping times expected.",
+    "date": "2025-09-26",
+    "lat": 30.5852,
+    "lng": 32.2618
+  },
+  {
+    "id": "S001",
+    "type": "Supplier",
+    "supplier_id": "celanese_bay city_tx",
+    "location": "Bay City, TX",
+    "risk_level": "Medium",
+    "category": "Operational",
+    "details": "Scheduled maintenance at the Bay City plant may reduce Acetaldehyde output by 15% next week.",
+    "date": "2025-09-27"
+  },
+  {
+    "id": "S002",
+    "type": "Supplier",
+    "supplier_id": "the dow chemical co_hahnville_la",
+    "location": "Hahnville, LA",
+    "risk_level": "High",
+    "category": "Weather Alert",
+    "details": "Hurricane warning issued for the area. The Dow Chemical facility is activating emergency protocols. Production halt is likely.",
+    "date": "2025-09-28"
+  },
+  {
+    "id": "S003",
+    "type": "Supplier",
+    "supplier_id": "lyondell chemical company_pasadena_tx",
+    "location": "Pasadena, TX",
+    "risk_level": "High",
+    "category": "Fire Incident",
+    "details": "A small fire was reported in a non-critical storage unit. The situation is under control but has caused a temporary shutdown of one production line.",
+    "date": "2025-09-28"
+  },
+  {
+    "id": "S004",
+    "type": "Supplier",
+    "supplier_id": "basf corporation_florham park_nj",
+    "location": "Florham Park, NJ",
+    "risk_level": "Low",
+    "category": "Logistics",
+    "details": "Local trucking union negotiations are ongoing. No disruptions reported, but the situation is being monitored.",
+    "date": "2025-09-25"
+  },
+  {
+    "id": "S005",
+    "type": "Supplier",
+    "supplier_id": "arkema delaware inc._pasadena_tx",
+    "location": "Pasadena, TX",
+    "risk_level": "Medium",
+    "category": "Regulatory",
+    "details": "New local environmental regulations require additional emissions reporting, potentially adding 24 hours to compliance checks.",
+    "date": "2025-09-24"
+  }
+]
