@@ -1,0 +1,294 @@
+/* src/RegulatoryRequirements.css */
+
+.regulatory-requirements-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: 24px;
+}
+
+/* Reusing styles from SupplyChainMap.css for consistency */
+.controls-container {
+  background-color: var(--card-bg);
+  padding: 16px 24px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.selection-controls {
+  display: flex;
+  gap: 16px;
+  flex-grow: 1;
+}
+
+.dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.dropdown label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.dropdown select {
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #fff;
+}
+
+.dropdown select:disabled {
+  background-color: #f3f4f6;
+  cursor: not-allowed;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.apply-btn, .clear-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.apply-btn {
+  background-color: var(--primary-accent);
+  color: white;
+}
+
+.apply-btn:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.apply-btn:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.clear-btn {
+  background-color: #e5e7eb;
+  color: var(--text-primary);
+}
+
+.clear-btn:hover {
+  background-color: #d1d5db;
+}
+
+/* Main Content Area */
+.regulatory-content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.visualization-container {
+  flex: 1;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  position: relative;
+  min-height: 500px;
+  overflow: auto; /* For scrolling if needed */
+}
+
+.visualization-container svg {
+  width: 100%;
+  height: 100%;
+}
+
+.message-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 24px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(2px);
+  z-index: 10;
+}
+
+.message-overlay.quiet {
+    background-color: transparent;
+    backdrop-filter: none;
+    color: #9ca3af;
+    z-index: 1;
+}
+
+.message-overlay svg {
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.message-overlay h2 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.message-overlay.error p {
+    color: #b91c1c;
+}
+.message-overlay.error svg {
+    color: #ef4444;
+}
+
+/* Regulations Section */
+.regulations-section {
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  padding: 24px;
+}
+
+.regulations-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.regulations-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.regulations-header button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  background-color: #eef2ff;
+  color: #4f46e5;
+  border: 1px solid #c7d2fe;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.regulations-header button:hover:not(:disabled) {
+  background-color: #e0e7ff;
+}
+
+.regulations-header button:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.selected-node-info {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 0.9rem;
+}
+
+.selected-node-info p {
+    margin: 0 0 4px 0;
+}
+.selected-node-info p:last-child {
+    margin-bottom: 0;
+}
+
+
+/* Regulations Table */
+.regulations-table-container {
+  overflow-x: auto;
+  position: relative;
+  min-height: 150px;
+}
+
+.regulations-table-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 20px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+.regulations-table-title:first-of-type {
+    margin-top: 0;
+}
+
+.regulations-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.regulations-table th, .regulations-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.regulations-table th {
+  background-color: #f9fafb;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.regulations-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.regulations-table a {
+  color: var(--primary-accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.regulations-table a:hover {
+  text-decoration: underline;
+}
+
+/* Spinner Animations */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+  width: 32px;
+  height: 32px;
+  color: var(--primary-accent);
+}
+
+.spinner-sm {
+    animation: spin 1s linear infinite;
+    width: 16px;
+    height: 16px;
+}

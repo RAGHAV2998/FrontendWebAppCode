@@ -13,6 +13,8 @@ import ComingSoon from './ComingSoon';
 import About from './About';
 import Contact from './Contact';
 import RiskAlerts from './RiskAlerts'; // <-- Import RiskAlerts
+import RegulatoryRequirements from './RegulatoryRequirements';
+
 
 // Style Imports
 import './App.css';
@@ -49,7 +51,7 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/supply-chain-map" element={<SupplyChainMap />} />
-          <Route path="/regulatory-requirements-map" element={<ComingSoon />} />
+          <Route path="/regulatory-requirements" element={<RegulatoryRequirements />} />
           <Route path="/risk-alerts" element={<RiskAlerts />} /> {/* <-- Update this route */}
           <Route path="/resilience-tracker" element={<ComingSoon />} />
           <Route path="/transportation" element={<ComingSoon />} />
