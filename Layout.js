@@ -4,7 +4,7 @@ import './Layout.css';
 import { 
     FiGrid, FiMap, FiGitPullRequest, FiTruck, FiAlertTriangle, 
     FiArchive, FiMapPin, FiBarChart2, FiDatabase, FiUser, FiBell, 
-    FiSearch, FiInfo, FiMail, FiFileText
+    FiSearch, FiInfo, FiMail, FiFileText, FiShare2
 } from 'react-icons/fi';
 
 const Layout = ({ children }) => {
@@ -25,6 +25,7 @@ const Layout = ({ children }) => {
         <nav className="sidebar-nav">
           <NavLink to="/"><FiGrid /> Dashboard</NavLink>
           <NavLink to="/supply-chain-map"><FiMap /> Supply Chain Map</NavLink>
+          <NavLink to="complete-network"><FiShare2 /> Complete Network</NavLink>
           <NavLink to="/regulatory-requirements"><FiFileText /> Regulatory Requirements</NavLink>
           <NavLink to="/resilience-tracker"><FiGitPullRequest /> Resilience Tracker</NavLink>
           <NavLink to="/transportation"><FiTruck /> Transportation</NavLink>
