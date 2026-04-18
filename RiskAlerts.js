@@ -9,22 +9,45 @@ import RiskTree from './RiskTree';
 import GlobalRiskMap from './GlobalRiskMap';
 
 import { FiMap, FiEye, FiMapPin } from 'react-icons/fi';
+import { FaIndustry, FaBoxOpen } from 'react-icons/fa'; // Using Font Awesome icons
 
-// Helper function to recursively extract all manufacturer names from the tree
-const extractManufacturers = (node) => {
-    let names = new Set();
-    // Add the node's own manufacturer if it exists and is not an empty string
-    if (node.manufacturer && node.manufacturer.trim() !== "") {
-        names.add(node.manufacturer);
+// Helper function to normalize the manufacturer string (e.g., 'celanese_bay city_tx')
+const parseManufacturerString = (supplierId) => {
+    if (!supplierId || typeof supplierId !== 'string' || supplierId.toLowerCase() === 'unknown') 
+        return { manufacturerName: 'N/A', locationName: 'N/A' };
+        
+    const parts = supplierId.split('_');
+    // e.g., "celanese_bay city_tx" -> ["celanese", "bay city", "tx"]
+    if (parts.length >= 3) {
+        // Manufacturer Name: capitalize each word and join (e.g., "celanese" -> "Celanese")
+        const manufacturer = parts[0].split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+        // Location: capitalize each word and join with comma-space (e.g., "bay city", "tx" -> "Bay City, TX")
+        const location = parts.slice(1).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+        return { manufacturerName: manufacturer, locationName: location };
     }
-    // Recurse through children
-    if (node.children && node.children.length > 0) {
-        node.children.forEach(child => {
-            const childNames = extractManufacturers(child);
-            childNames.forEach(name => names.add(name));
+    // Fallback for non-standard or global names
+    return { manufacturerName: supplierId, locationName: 'N/A' }; 
+};
+
+// Helper function to recursively extract all manufacturer IDs and their associated material (chemical) name
+const extractManufacturersWithMaterial = (node) => {
+    let list = [];
+    
+    if (node.manufacturer && node.manufacturer.trim() !== "") {
+        // The node's name is the chemical/material name at this tier
+        list.push({ 
+            id: node.manufacturer, 
+            chemical_name: node.name
         });
     }
-    return names;
+
+    if (node.children && node.children.length > 0) {
+        node.children.forEach(child => {
+            // Recursively get manufacturers/materials from children
+            list = list.concat(extractManufacturersWithMaterial(child));
+        });
+    }
+    return list;
 };
 
 
@@ -73,12 +96,13 @@ const RiskAlerts = () => {
     try {
       // Step 1: Fetch the supply chain hierarchy
       setLoadingMessage(`Fetching hierarchy for ${query.replace(/_/g, ' ')}...`);
-      const hierarchyResponse = await axios.get(`${config.API_BASE_URL}/get_hierarchy?product=${query}`);
+      const hierarchyResponse = await axios.get(`${config.API_BASE_URL}/get_hierarchy?product=${encodeURIComponent(query)}`);
       const hierarchyData = hierarchyResponse.data;
       setTreeData(hierarchyData);
 
-      // Step 2: Extract unique manufacturer names from the hierarchy
-      const manufacturerNames = Array.from(extractManufacturers(hierarchyData));
+      // Step 2: Extract unique manufacturers and their associated materials from the hierarchy
+      const manufacturerMaterialList = extractManufacturersWithMaterial(hierarchyData);
+      const manufacturerNames = [...new Set(manufacturerMaterialList.map(m => m.id))];
 
       if (manufacturerNames.length === 0) {
           setLoadingMessage('No manufacturers found in the supply chain. Displaying hierarchy without alerts.');
@@ -96,10 +120,31 @@ const RiskAlerts = () => {
         { manufacturers: manufacturerNames }
       );
       
-      const manufacturerSpecificAlerts = alertsResponse.data;
+      const rawSupplierAlerts = alertsResponse.data;
 
-      setSupplierAlerts(manufacturerSpecificAlerts);
-      setDisplayedAlerts(manufacturerSpecificAlerts); // Initially display all fetched alerts
+      // --- START ENRICHMENT for initial view ---
+      const enrichedSupplierAlerts = rawSupplierAlerts.map(alert => {
+          // Use alert.manufacturer (from RiskTree's expected input) or alert.supplier_id (from alerts.json structure)
+          const alertId = alert.manufacturer || alert.supplier_id; 
+          
+          // Find the material name. Note: This assumes a 1:1 mapping is the best approach for the initial list.
+          const materialEntry = manufacturerMaterialList.find(m => m.id === alertId);
+          const chemicalName = materialEntry ? materialEntry.chemical_name : selectedProduct; // Fallback to root product
+
+          // Parse manufacturer string for cleaner display names
+          const { manufacturer, location } = parseManufacturerString(alertId);
+          
+          return {
+              ...alert,
+              chemical_name: chemicalName,
+              manufacturer_name: manufacturer,
+              location: location // Use the parsed location (e.g., "Bay City, TX")
+          };
+      });
+      // --- END ENRICHMENT ---
+      
+      setSupplierAlerts(enrichedSupplierAlerts);
+      setDisplayedAlerts(enrichedSupplierAlerts); // Initially display all fetched alerts
       setViewMode('supplyChain');
 
     } catch (err) {
@@ -109,7 +154,7 @@ const RiskAlerts = () => {
       setLoading(false);
       setLoadingMessage('');
     }
-  }, []);
+  }, [selectedProduct]);
 
   const handleApplySelection = () => {
     if (selectedProduct && selectedManufacturer) {
@@ -130,6 +175,7 @@ const RiskAlerts = () => {
   
   const handleNodeHover = (nodeAlerts) => {
       if(nodeAlerts && nodeAlerts.length > 0){
+        // Node alerts are already enriched in RiskTree.js, just use them
         setDisplayedAlerts(nodeAlerts);
       } else if (nodeAlerts === null) {
         // If hovering off a node, reset the feed to show all alerts for the current supply chain
@@ -137,9 +183,60 @@ const RiskAlerts = () => {
       }
   };
 
+  // Utility to get the chemical name for display (used for the card header in global view)
+  const getAlertChemicalName = (alert) => {
+    if (alert.type === 'Global') {
+        return alert.location; 
+    }
+    return alert.chemical_name || 'N/A';
+  }
+  
+  // Utility to get the manufacturer name for display (used for the card header in global view)
+  const getAlertManufacturerName = (alert) => {
+    if (alert.type === 'Global') {
+        return 'Global Supply Network'; 
+    }
+    return alert.manufacturer_name || 'N/A';
+  }
+
+  // Utility to get the location name for display (used for the card header in global view)
+  const getAlertLocationName = (alert) => {
+    if (alert.type === 'Global') {
+        return alert.location; 
+    }
+    return alert.location || 'N/A';
+  }
+
+  // Extract manufacturer/location once for the header when in supplyChain view
+  const { manufacturerName: primaryManufacturerName, locationName: primaryLocationName } = parseManufacturerString(selectedManufacturer);
+
+
+  const SupplyChainHeaderInfo = () => (
+    <div className="selected-node-info" style={{ marginBottom: '24px' }}>
+        <p style={{ fontWeight: '700', fontSize: '1.1rem', color: 'var(--text-primary)'}}>
+            Primary Supply Chain Details:
+        </p>
+        <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', fontSize: '0.95rem'}}>
+            <p>
+                <FaBoxOpen style={{ marginRight: '8px', color: 'var(--primary-accent)' }} /> 
+                <strong>Chemical:</strong> {selectedProduct}
+            </p>
+            <p>
+                <FaIndustry style={{ marginRight: '8px', color: 'var(--primary-accent)' }} /> 
+                <strong>Manufacturer:</strong> {primaryManufacturerName}
+            </p>
+            <p>
+                <FiMapPin style={{ marginRight: '8px', color: 'var(--primary-accent)' }} /> 
+                <strong>Location:</strong> {primaryLocationName}
+            </p>
+        </div>
+    </div>
+  );
+
+
   return (
     <div className="risk-alerts-container">
-      {/* Selection Controls */}
+      {/* Selection Controls - UNCHANGED */}
       <div className="controls-container">
          <div className="selection-controls">
             <div className="dropdown">
@@ -175,7 +272,7 @@ const RiskAlerts = () => {
       </div>
 
       <div className="risk-alerts-content">
-        {/* Left Column - Visualization */}
+        {/* Left Column - Visualization - UNCHANGED */}
         <div className="risk-visualization-section">
           <h2>{viewMode === 'global' ? 'Global Hotspots' : `Risk Analysis for ${selectedProduct}`}</h2>
           <div className="visualization-container">
@@ -194,18 +291,53 @@ const RiskAlerts = () => {
 
         {/* Right Column - Alerts Feed */}
         <div className="alerts-feed-section">
-          <h2>Alerts Feed</h2>
+          <div className="alerts-feed-header">
+              <h2>Alerts Feed</h2>
+          </div>
+          
+          {/* Display Supply Chain Context once at the top */}
+          {viewMode === 'supplyChain' && selectedProduct && <SupplyChainHeaderInfo />}
+          
           <div className="alerts-feed">
              {displayedAlerts.length === 0 && !loading && <p className="no-alerts">No active alerts for this view.</p>}
-             {displayedAlerts.map((alert, index) => ( // Added index for a more robust key
+             {displayedAlerts.map((alert, index) => ( 
               <div key={`${alert.id}-${index}`} className={`alert-card ${alert.risk_level.toLowerCase()}`}>
                 <div className="alert-card-header">
                   <span className="alert-type">{alert.category}</span>
                   <span className={`alert-risk-level ${alert.risk_level.toLowerCase()}`}>{alert.risk_level}</span>
                 </div>
                 <div className="alert-card-body">
-                  <p className="alert-location"><FiMapPin /> {alert.location}</p>
-                  <p className="alert-details">{alert.details}</p>
+                    {viewMode === 'global' ? (
+                        <>
+                            {/* Display full details for Global alerts */}
+                            <p className="alert-location">
+                                <FaBoxOpen /> 
+                                <strong>Chemical: </strong>
+                                {getAlertChemicalName(alert)}
+                            </p>
+                            <p className="alert-location">
+                                <FaIndustry /> 
+                                <strong>Manufacturer: </strong>
+                                {getAlertManufacturerName(alert)}
+                            </p>
+                            <p className="alert-location">
+                                <FiMapPin /> 
+                                <strong>Location: </strong>
+                                {getAlertLocationName(alert)}
+                            </p>
+                        </>
+                    ) : (
+                        // In supplyChain view, show only the specific manufacturer/location that the alert is for.
+                        // For node-hover, this alert is specific to one manufacturer/location.
+                        <p className="alert-location" style={{ marginBottom: '12px' }}>
+                            {alert.manufacturer_name && <><FaIndustry /> {alert.manufacturer_name} </>}
+                            {alert.manufacturer_name && alert.location && <span> @ </span>}
+                            {alert.location && <><FiMapPin /> {alert.location}</>}
+                            {/* If the user is viewing all alerts (not hovering), this will show the specific alert context. */}
+                        </p>
+                    )}
+                    
+                    <p className="alert-details">{alert.details}</p>
                 </div>
                 <div className="alert-card-footer">
                   <span className="alert-date">{alert.date}</span>

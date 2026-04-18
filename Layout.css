@@ -27,11 +27,14 @@
   flex-direction: column;
   flex-shrink: 0;
   border-right: 1px solid var(--border-color);
+  transition: width 0.3s ease; /* Added transition for smooth collapse */
 }
 
 .sidebar-header {
   padding: 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
 }
 
 .sidebar-header .logo {
@@ -39,12 +42,16 @@
   align-items: center;
   gap: 12px;
   text-decoration: none;
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .sidebar-header .logo svg {
   width: 32px;
   height: 32px;
   color: var(--primary-accent);
+  flex-shrink: 0;
 }
 
 .sidebar-header .logo h1 {
@@ -59,6 +66,7 @@
   padding: 16px 0;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
 }
 
 .sidebar-nav a {
@@ -71,7 +79,8 @@
   color: var(--sidebar-text);
   font-weight: 500;
   border-radius: 6px;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease, padding 0.3s ease, justify-content 0.3s ease;
+  white-space: nowrap;
 }
 
 .sidebar-nav a:hover {
@@ -87,6 +96,7 @@
 .sidebar-nav a svg {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .sidebar-footer {
@@ -94,6 +104,26 @@
   font-size: 0.8rem;
   color: #4b5563;
   text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Collapsed Sidebar Styles */
+.sidebar.collapsed {
+  width: 80px;
+}
+
+.sidebar.collapsed .sidebar-header .logo {
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-nav a {
+  padding: 12px;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-nav a span {
+  display: none;
 }
 
 /* Main Content Styles */
@@ -115,6 +145,13 @@
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+/* Header Left Area */
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 .search-bar {
@@ -158,6 +195,9 @@
   padding: 8px;
   border-radius: 50%;
   transition: background-color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .action-button:hover {
@@ -191,8 +231,6 @@
   flex: 1;
 }
 
-/* Add these styles to the end of src/Layout.css */
-
 .sidebar-divider {
   margin: 16px;
   border: none;
@@ -201,5 +239,5 @@
 
 .sidebar-nav.secondary-nav {
   padding-top: 0;
-  margin-top: -12px; /* Pull it a bit closer to the divider */
+  margin-top: -12px;
 }

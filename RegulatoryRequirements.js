@@ -44,8 +44,7 @@ const RegulatoryRequirements = () => {
     const query = `${selectedProduct}_${selectedManufacturer}`;
 
     try {
-      const response = await axios.get(`${config.API_BASE_URL}/get_hierarchy?product=${query}`);
-      // Collapse all nodes by default except the root
+      const response = await axios.get(`${config.API_BASE_URL}/get_hierarchy?product=${encodeURIComponent(query)}`);      // Collapse all nodes by default except the root
       const root = response.data;
       if (root.children) {
         root._children = root.children;

@@ -2,17 +2,35 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import Tree from './Tree';
 import ManufacturerTree from './ManufacturerTree';
+import RiskTree from './RiskTree';
 import config from './config';
-// Added FiEye and FiMap for consistency with SupplyChainMap UI
-import { FiUpload, FiRefreshCw, FiEye, FiCheckCircle, FiMap } from 'react-icons/fi';
-import './SupplyChainMap.css'; 
+import { FiUpload, FiRefreshCw, FiEye, FiCheckCircle, FiMap, FiAlertTriangle } from 'react-icons/fi';
+import './SupplyChainMap.css';
 
 const CompleteNetwork = () => {
   const [file, setFile] = useState(null);
   const [treeData, setTreeData] = useState(null);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [analyzingRisk, setAnalyzingRisk] = useState(false);
   const [error, setError] = useState(null);
   const [showManufacturerView, setShowManufacturerView] = useState(false);
+  const [showRiskView, setShowRiskView] = useState(false);
+  const [hoveredAlerts, setHoveredAlerts] = useState(null); // To store alerts for the hovered node
+
+  // Helper to extract manufacturers from the generated tree
+  const extractManufacturers = (node) => {
+    let list = [];
+    if (node.manufacturer && node.manufacturer.trim() !== "" && node.manufacturer.toLowerCase() !== 'unknown') {
+      list.push(node.manufacturer);
+    }
+    if (node.children && node.children.length > 0) {
+      node.children.forEach(child => {
+        list = list.concat(extractManufacturers(child));
+      });
+    }
+    return list;
+  };
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
@@ -24,23 +42,20 @@ const CompleteNetwork = () => {
       setError("Please select a JSON file first.");
       return;
     }
-
     setLoading(true);
     setError(null);
+    setTreeData(null);
+    setAlerts([]);
+    setShowRiskView(false);
 
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
         const jsonContent = JSON.parse(e.target.result);
-        
-        // Ensure the API call points to your network completion endpoint
         const response = await axios.post(`${config.API_BASE_URL}/complete_network`, jsonContent);
-        
-        // Store the response data to be passed into the Tree components
         setTreeData(response.data);
       } catch (err) {
-        console.error("Processing failed:", err);
-        setError("Failed to process network. Ensure the file is valid JSON and the server is connected.");
+        setError("Failed to process network. Check JSON validity and server connection.");
       } finally {
         setLoading(false);
       }
@@ -48,11 +63,31 @@ const CompleteNetwork = () => {
     reader.readAsText(file);
   };
 
+  const handleAnalyzeRisk = async () => {
+    if (!treeData) return;
+    setAnalyzingRisk(true);
+    try {
+      const manufacturerIds = [...new Set(extractManufacturers(treeData))];
+      const response = await axios.post(`${config.API_BASE_URL}/getalertformanufacturers`, {
+        manufacturers: manufacturerIds 
+      });
+      setAlerts(response.data);
+      setShowRiskView(true); // Switch to Risk View once data is ready
+    } catch (err) {
+      setError("Failed to fetch risk alerts.");
+    } finally {
+      setAnalyzingRisk(false);
+    }
+  };
+
   const handleClear = () => {
     setFile(null);
     setTreeData(null);
+    setAlerts([]);
     setError(null);
-    setShowManufacturerView(false); // Reset view on clear
+    setShowManufacturerView(false);
+    setShowRiskView(false);
+    setHoveredAlerts(null);
   };
 
   return (
@@ -61,12 +96,7 @@ const CompleteNetwork = () => {
         <div className="selection-controls">
           <div className="dropdown">
             <label>Upload Your Network (JSON)</label>
-            <input 
-              type="file" 
-              accept=".json" 
-              onChange={handleFileChange}
-              className="file-input-styled" // Use CSS for padding instead of inline
-            />
+            <input type="file" accept=".json" onChange={handleFileChange} className="file-input-styled" />
           </div>
         </div>
         
@@ -74,49 +104,74 @@ const CompleteNetwork = () => {
           <button className="apply-btn" onClick={handleUpload} disabled={!file || loading}>
             <FiUpload /> {loading ? "Processing..." : "Complete Network"}
           </button>
+          
+          {/* Risk Analysis Button: Only visible after network is completed */}
+          {treeData && (
+            <button className="apply-btn" onClick={handleAnalyzeRisk} disabled={analyzingRisk} style={{ backgroundColor: '#e67e22' }}>
+              <FiAlertTriangle /> {analyzingRisk ? "Analyzing..." : "Analyze Risk"}
+            </button>
+          )}
+
           <button className="clear-btn" onClick={handleClear}>
             <FiRefreshCw /> Clear
           </button>
         </div>
       </div>
 
-      <div className="visualization-container">
-        {!treeData && !loading && (
-          <div className="placeholder">
-            <FiMap size={48} /> {/* Match icon with SupplyChainMap */}
-            <h2>Complete Your Network</h2>
-            <p>Upload your current supply chain JSON to identify missing tiers and risks.</p>
-          </div>
-        )}
-
-        {loading && (
-          <div className="loading-indicator">
-            <div className="spinner"></div>
-            <p>Analyzing and completing your network...</p>
-          </div>
-        )}
-
-        {error && <div className="error-message">{error}</div>}
-
-        {treeData && !loading && (
-          <>
-            {/* Consistent Header with Toggle Button */}
+      <div className="risk-alerts-content" style={{ display: 'flex', gap: '20px' }}>
+        <div className="visualization-section" style={{ flex: 3 }}>
+          {treeData && !loading && (
             <div className="view-toggle-header">
-              <h3><FiCheckCircle color="green" /> Completed Network Result</h3>
-              <button onClick={() => setShowManufacturerView(!showManufacturerView)}>
-                <FiEye /> {showManufacturerView ? "Component View" : "Manufacturer View"}
+              <h3><FiCheckCircle color="green" /> {showRiskView ? "Risk Assessment" : "Network Structure"}</h3>
+              <button onClick={() => {
+                if (showRiskView) setShowRiskView(false);
+                else setShowManufacturerView(!showManufacturerView);
+              }}>
+                <FiEye /> {showRiskView ? "Back to Structure" : (showManufacturerView ? "Component View" : "Manufacturer View")}
               </button>
             </div>
+          )}
+
+          <div className="visualization-container" style={{ minHeight: '600px' }}>
+            {!treeData && !loading && <div className="placeholder"><FiMap size={48} /><h2>Upload to Begin</h2></div>}
             
-            <div className="tree-wrapper">
-              {/* Conditional rendering matches SupplyChainMap logic */}
-              {showManufacturerView ? (
-                <ManufacturerTree initialData={treeData} />
-              ) : (
-                <Tree initialData={treeData} />
-              )}
-            </div>
-          </>
+            {treeData && !loading && (
+              <div className="tree-wrapper">
+                {showRiskView ? (
+                  <RiskTree 
+                    initialData={treeData} 
+                    alerts={alerts} 
+                    onNodeHover={setHoveredAlerts} // Capture alerts on hover
+                  />
+                ) : (
+                  showManufacturerView ? <ManufacturerTree initialData={treeData} /> : <Tree initialData={treeData} />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Hover Alerts Sidebar: Only visible when in Risk View and hovering a node */}
+        {showRiskView && (
+          <div className="alerts-feed-section" style={{ flex: 1, borderLeft: '1px solid #ddd', paddingLeft: '15px' }}>
+            <h3>Node Risk Details</h3>
+            {!hoveredAlerts || hoveredAlerts.length === 0 ? (
+              <p className="no-alerts">Hover over a node to see active risks.</p>
+            ) : (
+              <div className="alerts-feed">
+                {hoveredAlerts.map((alert, idx) => (
+                  <div key={idx} className={`alert-card ${alert.risk_level.toLowerCase()}`} style={{ marginBottom: '10px', padding: '10px', borderRadius: '5px', border: '1px solid #eee' }}>
+                    <div className="alert-card-header">
+                      <span className={`alert-risk-level ${alert.risk_level.toLowerCase()}`}>{alert.risk_level}</span>
+                    </div>
+                    <p><strong>{alert.manufacturer_name}</strong></p>
+                    <p className="alert-details" style={{ fontSize: '0.85rem' }}>{alert.details}</p>
+                    <span className="alert-date" style={{ fontSize: '0.75rem', color: '#888' }}>{alert.date}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

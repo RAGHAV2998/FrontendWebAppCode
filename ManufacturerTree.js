@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as d3 from "d3";
 
-// Function to collapse all nodes except the root
 const collapseAllNodes = (node) => {
   if (node.children) {
     node._children = node.children;
@@ -10,7 +9,7 @@ const collapseAllNodes = (node) => {
   }
 };
 
-const ManufacturerTree = ({ initialData }) => {
+const ManufacturerTree = ({ initialData, isExpanded }) => {
   const svgRef = useRef(null);
   const [popup, setPopup] = useState({
     visible: false,
@@ -21,12 +20,19 @@ const ManufacturerTree = ({ initialData }) => {
 
   const [data, setData] = useState(() => {
     const rootNode = JSON.parse(JSON.stringify(initialData));
-    collapseAllNodes(rootNode);
+    if (!isExpanded) collapseAllNodes(rootNode);
     return rootNode;
   });
 
-  // Toggle node expand/collapse
-  const toggleNode = (node) => {
+  useEffect(() => {
+    const rootNode = JSON.parse(JSON.stringify(initialData));
+    if (!isExpanded) {
+      collapseAllNodes(rootNode);
+    }
+    setData(rootNode);
+  }, [initialData, isExpanded]);
+
+  const toggleNode = useCallback((node) => {
     if (node.children) {
       node._children = node.children;
       node.children = null;
@@ -34,10 +40,12 @@ const ManufacturerTree = ({ initialData }) => {
       node.children = node._children;
       node._children = null;
     }
-    setData({ ...data });
-  };
+    setData((prev) => ({ ...prev }));
+  }, []);
 
   useEffect(() => {
+    if (!data) return;
+
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -47,16 +55,25 @@ const ManufacturerTree = ({ initialData }) => {
       .style("background", "#f3f6f9")
       .style("font-family", "sans-serif");
 
-    const treeLayout = d3.tree().size([height, width - 200]);
+    // Clear previous elements to prevent overlapping on re-renders
+    svg.selectAll("*").remove();
+
+    // Define margins to keep text inside the box
+    const margin = { top: 60, right: 200, bottom: 60, left: 200 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const treeLayout = d3.tree().size([innerHeight, innerWidth]);
     const root = d3.hierarchy(data);
     treeLayout(root);
 
-    svg.selectAll(".link").remove();
-    svg.selectAll(".node").remove();
+    // Create a main group shifted by the top/left margins
+    const g = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Draw links
-    svg
-      .selectAll(".link")
+    g.selectAll(".link")
       .data(root.links())
       .join("path")
       .attr("class", "link")
@@ -66,7 +83,7 @@ const ManufacturerTree = ({ initialData }) => {
       .attr("d", d3.linkHorizontal().x((d) => d.y).y((d) => d.x));
 
     // Draw nodes
-    const nodes = svg
+    const nodes = g
       .selectAll(".node")
       .data(root.descendants())
       .join("g")
@@ -76,16 +93,16 @@ const ManufacturerTree = ({ initialData }) => {
       .on("mouseover", (event, d) => {
         setPopup({
           visible: true,
-          x: event.pageX + 15,
-          y: event.pageY - 15,
+          x: event.clientX + 15,
+          y: event.clientY + 15,
           content: d.data.name || "No chemical info",
         });
       })
       .on("mousemove", (event) => {
         setPopup((prev) => ({
           ...prev,
-          x: event.pageX + 15,
-          y: event.pageY - 15,
+          x: event.clientX + 15,
+          y: event.clientY + 15,
         }));
       })
       .on("mouseout", () => {
@@ -98,11 +115,11 @@ const ManufacturerTree = ({ initialData }) => {
       .attr("fill", (d) => {
         switch (d.depth) {
           case 0:
-            return "#1E88E5"; // root
+            return "#1E88E5";
           case 1:
             return "#FFB300";
           case 2:
-            return "#FFB300";
+            return "#22e42f";
           case 3:
             return "#FF6F00";
           default:
@@ -112,13 +129,12 @@ const ManufacturerTree = ({ initialData }) => {
       .attr("stroke", "#333")
       .attr("stroke-width", 2);
 
+    // UPDATED: Text positioned directly below the node
     nodes
       .append("text")
-      .attr("dy", "0.35em")
-      .attr("x", (d) => (d.children || d._children ? -15 : 15))
-      .attr("text-anchor", (d) =>
-        d.children || d._children ? "end" : "start"
-      )
+      .attr("dy", "1.8em") // Push the text down
+      .attr("x", 0)        // Align exactly to the center horizontally
+      .attr("text-anchor", "middle") // Center the text
       .text((d) =>
         d.data.manufacturer ? d.data.manufacturer.split(",")[0] : "Unknown"
       )
@@ -128,7 +144,7 @@ const ManufacturerTree = ({ initialData }) => {
     return () => {
       svg.selectAll("*").remove();
     };
-  }, [data]);
+  }, [data, toggleNode]);
 
   return (
     <>
@@ -136,7 +152,7 @@ const ManufacturerTree = ({ initialData }) => {
       {popup.visible && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed",
             top: popup.y,
             left: popup.x,
             backgroundColor: "#fff",

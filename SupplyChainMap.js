@@ -6,8 +6,7 @@ import config from './config';
 import chemicals from './CategoryChemical.json';
 import manufacturers from './chemicals_manufacturing_locations.json';
 import './SupplyChainMap.css';
-// CORRECTED IMPORT STATEMENT: Added FiMap
-import { FiFilter, FiRefreshCw, FiEye, FiMap } from 'react-icons/fi';
+import { FiFilter, FiRefreshCw, FiEye, FiMap, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
 
 const SupplyChainMap = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
@@ -18,7 +17,10 @@ const SupplyChainMap = () => {
   const [treeData, setTreeData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [showManufacturerView, setShowManufacturerView] = useState(false);
+  
+  // Set default view to Manufacturer View (true)
+  const [showManufacturerView, setShowManufacturerView] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const fetchTreeData = useCallback(async () => {
     if (!submittedQuery) {
@@ -54,6 +56,7 @@ const SupplyChainMap = () => {
     setSubmittedQuery('');
     setTreeData(null);
     setError(null);
+    setIsExpanded(false);
   };
 
   React.useEffect(() => {
@@ -149,12 +152,21 @@ const SupplyChainMap = () => {
           <>
             <div className="view-toggle-header">
               <h3>{submittedQuery.replace(/_/g, ' ')} Network</h3>
-              <button onClick={() => setShowManufacturerView(!showManufacturerView)}>
-                <FiEye /> {showManufacturerView ? "Component View" : "Manufacturer View"}
-              </button>
+              <div className="header-controls">
+                <button onClick={() => setIsExpanded(!isExpanded)} className="action-toggle-btn">
+                  {isExpanded ? <><FiMinimize2 /> Collapse Network</> : <><FiMaximize2 /> Expand Full Network</>}
+                </button>
+                <button onClick={() => setShowManufacturerView(!showManufacturerView)} className="action-toggle-btn">
+                  <FiEye /> {showManufacturerView ? (
+                    <>Component View <span className="premium-badge">Premium</span></>
+                  ) : "Manufacturer View"}
+                </button>
+              </div>
             </div>
             <div className="tree-wrapper">
-              {showManufacturerView ? <ManufacturerTree initialData={treeData} /> : <Tree initialData={treeData} />}
+              {showManufacturerView 
+                ? <ManufacturerTree initialData={treeData} isExpanded={isExpanded} /> 
+                : <Tree initialData={treeData} isExpanded={isExpanded} />}
             </div>
           </>
         )}

@@ -1,37 +1,46 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as d3 from "d3";
 
-// Function to collapse all nodes except the root
 const collapseAllNodes = (node) => {
   if (node.children) {
-    node._children = node.children; // Move children to _children
-    node.children.forEach(collapseAllNodes); // Recursively collapse child nodes
-    node.children = null; // Set children to null to hide them
+    node._children = node.children;
+    node.children.forEach(collapseAllNodes); 
+    node.children = null; 
   }
 };
 
-const Tree = ({ initialData }) => {
+const Tree = ({ initialData, isExpanded }) => {
   const svgRef = useRef(null);
-  const [popup, setPopup] = useState({ visible: false, x: 0, y: 0, content: "" }); // State for popup
+  const [popup, setPopup] = useState({ visible: false, x: 0, y: 0, content: "" }); 
+  
   const [data, setData] = useState(() => {
-    const rootNode = JSON.parse(JSON.stringify(initialData)); // Deep copy to avoid mutating input data
-    collapseAllNodes(rootNode); // Collapse all nodes except the root
+    const rootNode = JSON.parse(JSON.stringify(initialData)); 
+    if (!isExpanded) collapseAllNodes(rootNode); 
     return rootNode;
   });
 
-  // Function to toggle a node's children
-  const toggleNode = (node) => {
+  useEffect(() => {
+    const rootNode = JSON.parse(JSON.stringify(initialData));
+    if (!isExpanded) {
+      collapseAllNodes(rootNode);
+    }
+    setData(rootNode);
+  }, [initialData, isExpanded]);
+
+  const toggleNode = useCallback((node) => {
     if (node.children) {
-      node._children = node.children; // Collapse: move children to _children
+      node._children = node.children; 
       node.children = null;
     } else {
-      node.children = node._children; // Expand: move children back from _children
+      node.children = node._children; 
       node._children = null;
     }
-    setData({ ...data }); // Trigger re-render
-  };
+    setData((prev) => ({ ...prev })); 
+  }, []);
 
   useEffect(() => {
+    if (!data) return;
+
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -41,16 +50,25 @@ const Tree = ({ initialData }) => {
       .style("background", "#f3f6f9")
       .style("font-family", "sans-serif");
 
-    const treeLayout = d3.tree().size([height, width - 200]);
+    // Clear previous elements to prevent overlapping on re-renders
+    svg.selectAll("*").remove(); 
+
+    // Define margins to keep text inside the box (200px gives plenty of room for long names)
+    const margin = { top: 40, right: 200, bottom: 40, left: 200 };
+    const innerWidth = width - margin.left - margin.right;
+    const innerHeight = height - margin.top - margin.bottom;
+
+    const treeLayout = d3.tree().size([innerHeight, innerWidth]);
     const root = d3.hierarchy(data);
     treeLayout(root);
 
-    svg.selectAll(".link").remove(); // Clear existing links
-    svg.selectAll(".node").remove(); // Clear existing nodes
+    // Create a main group shifted by the top/left margins
+    const g = svg
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
 
     // Add links
-    svg
-      .selectAll(".link")
+    g.selectAll(".link")
       .data(root.links())
       .join("path")
       .attr("class", "link")
@@ -66,53 +84,52 @@ const Tree = ({ initialData }) => {
       );
 
     // Add nodes
-    const nodes = svg
+    const nodes = g
       .selectAll(".node")
       .data(root.descendants())
       .join("g")
       .attr("class", "node")
       .attr("transform", (d) => `translate(${d.y},${d.x})`)
-      .on("click", (event, d) => toggleNode(d.data)) // Add click event for toggling
+      .on("click", (event, d) => toggleNode(d.data))
       .on("mouseover", (event, d) => {
         setPopup({
           visible: true,
-          x: event.pageX + 15, // Cursor-relative position
-          y: event.pageY - 15,
+          x: event.clientX + 15,
+          y: event.clientY + 15,
           content: d.data.manufacturer || "No details available",
         });
       })
       .on("mousemove", (event) => {
         setPopup((prev) => ({
           ...prev,
-          x: event.pageX + 15,
-          y: event.pageY - 15,
+          x: event.clientX + 15,
+          y: event.clientY + 15,
         }));
       })
       .on("mouseout", () => {
         setPopup({ visible: false, x: 0, y: 0, content: "" });
       });
       
-
     nodes
       .append("circle")
       .attr("r", 10)
       .attr("fill", (d) => {
         switch (d.depth) {
-          case 0: // Root node (Tier 1)
+          case 0: 
             return "#1E88E5";
-          case 1: // Tier 2
+          case 1: 
             return "#FFB300";
-          case 2: // Tier 3
-            return "#FFB300";
-          case 3: // Tier 3
+          case 2: 
+            return "#22e42f";
+          case 3: 
             return "#FF6F00";
-          default: // Any deeper levels
+          default: 
             return "#B3E5FC";
         }
       })
       .attr("stroke", "#333")
       .attr("stroke-width", 2)
-      .attr("opacity", (d) => d.data.percentage / 100); // Set opacity based on percentage
+      .attr("opacity", (d) => d.data.percentage / 100); 
 
     nodes
       .append("text")
@@ -137,15 +154,12 @@ const Tree = ({ initialData }) => {
       .text((d) => d.data.manufacturer)
       .style("font-size", "20px")
       .style("fill", "#666")
-      .style("opacity", 0); // Hide by default
+      .style("opacity", 0); 
 
     return () => {
-      svg.selectAll("*").remove(); // Clear previous render
+      svg.selectAll("*").remove(); 
     };
-  }, [data]);
-
-  // return <svg ref={svgRef} style={{ width: "100%", height: "400px" }}></svg>;
- // return <svg ref={svgRef} style={{ width: "100%", height: "60vh" }}></svg>;
+  }, [data, toggleNode]);
 
   return (
     <>
@@ -153,7 +167,7 @@ const Tree = ({ initialData }) => {
       {popup.visible && (
         <div
           style={{
-            position: "absolute",
+            position: "fixed", 
             top: popup.y,
             left: popup.x,
             backgroundColor: "#fff",
@@ -171,7 +185,6 @@ const Tree = ({ initialData }) => {
       )}
     </>
   );
-  
 };
 
 export default Tree;
