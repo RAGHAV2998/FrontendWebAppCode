@@ -5,6 +5,7 @@ import './RegulatoryRequirements.css';
 import config from './config';
 import chemicals from './CategoryChemical.json';
 import manufacturers from './chemicals_manufacturing_locations.json';
+import { trackPageVisit, trackMaterialSearch } from './activityTracker';
 import { FiFilter, FiRefreshCw, FiFileText, FiLoader, FiAlertTriangle, FiChevronDown } from 'react-icons/fi';
 
 const RegulatoryRequirements = () => {
@@ -29,9 +30,13 @@ const RegulatoryRequirements = () => {
 
   const svgRef = useRef();
 
+  useEffect(() => { trackPageVisit('Regulatory Requirements'); }, []);
+
   // Fetches the hierarchy data to build the supply chain tree
   const handleApplySelection = useCallback(async () => {
     if (!selectedProduct || !selectedManufacturer) return;
+
+    trackMaterialSearch(selectedProduct, 'Regulatory Requirements', selectedManufacturer);
 
     setTreeLoading(true);
     setTreeError(null);

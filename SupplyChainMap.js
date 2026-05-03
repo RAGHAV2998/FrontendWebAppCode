@@ -1,10 +1,11 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import axios from 'axios';
 import Tree from './Tree';
 import ManufacturerTree from './ManufacturerTree';
 import config from './config';
 import chemicals from './CategoryChemical.json';
 import manufacturers from './chemicals_manufacturing_locations.json';
+import { trackPageVisit, trackMaterialSearch } from './activityTracker';
 import './SupplyChainMap.css';
 import { FiFilter, FiRefreshCw, FiEye, FiMap, FiMaximize2, FiMinimize2 } from 'react-icons/fi';
 
@@ -21,6 +22,8 @@ const SupplyChainMap = () => {
   // Set default view to Manufacturer View (true)
   const [showManufacturerView, setShowManufacturerView] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => { trackPageVisit('Supply Chain Map'); }, []);
 
   const fetchTreeData = useCallback(async () => {
     if (!submittedQuery) {
@@ -46,6 +49,7 @@ const SupplyChainMap = () => {
     if (selectedProduct && selectedManufacturer) {
       const finalSelection = `${selectedProduct}_${selectedManufacturer}`;
       setSubmittedQuery(finalSelection);
+      trackMaterialSearch(selectedProduct, 'Supply Chain Map', selectedManufacturer);
     }
   };
   

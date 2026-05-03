@@ -22,7 +22,7 @@ export default function AuthForm({ onLoginSuccess }) {
       setMessage(response.data.message);
       if (response.data.success) {
         const username = email.split("@")[0];
-        onLoginSuccess(username);
+        onLoginSuccess(username, response.data.last_login);
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -41,8 +41,8 @@ export default function AuthForm({ onLoginSuccess }) {
       return;
     }
     
-    if (password.length < 6) {
-      setMessage("Password must be at least 6 characters long");
+    if (password.length < 8) {
+      setMessage("Password must be at least 8 characters long");
       return;
     }
     
@@ -114,7 +114,7 @@ export default function AuthForm({ onLoginSuccess }) {
             </div>
             <div className="input-group">
               <span className="input-icon"><FiLock /></span>
-              <input type="password" placeholder="Password (min. 6 characters)" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <input type="password" placeholder="Password (min. 8 characters)" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <div className="input-group">
              <span className="input-icon"><FiLock /></span>
@@ -128,7 +128,7 @@ export default function AuthForm({ onLoginSuccess }) {
         )}
         
         {message && (
-          <div className={`message ${message.includes("failed") || message.includes("match") || message.includes("6 characters") ? "error" : "success"}`}>
+          <div className={`message ${message.includes("failed") || message.includes("match") || message.includes("8 characters") || message.includes("Invalid") ? "error" : "success"}`}>
             {message}
           </div>
         )}

@@ -3,61 +3,10 @@ import './Dashboard.css';
 
 // Import icons (you'll need to install react-icons: npm install react-icons)
 import { 
-  FaShieldAlt, 
-  FaTruck, 
-  FaWarehouse, 
-  FaExclamationTriangle, 
-  FaGlobeAmericas,
   FaMapMarkerAlt
 } from 'react-icons/fa';
 
 const Dashboard = ({ username }) => {
-  // Sample data - replace with your actual data
-  const statsData = [
-    {
-      title: 'Supply Chain Health',
-      value: '92%',
-      description: 'Overall resilience score',
-      icon: <FaShieldAlt />,
-      color: 'blue'
-    },
-    {
-      title: 'On-Time Delivery',
-      value: '96.2%',
-      description: 'Link 3 of days performance',
-      icon: <FaTruck />,
-      color: 'green'
-    },
-    {
-      title: 'Active Suppliers',
-      value: '847',
-      description: 'Worked chemical suppliers',
-      icon: <FaWarehouse />,
-      color: 'purple'
-    },
-    {
-      title: 'Inventory Turnover',
-      value: '4.2x',
-      description: 'Chemical inventory efficiency',
-      icon: <FaWarehouse />,
-      color: 'orange'
-    },
-    {
-      title: 'Risk Alerts',
-      value: '3',
-      description: 'Optical asset reporting attention',
-      icon: <FaExclamationTriangle />,
-      color: 'red'
-    },
-    {
-      title: 'Carbon Footprint',
-      value: '2,847 tCO₂',
-      description: 'Maturity ventilation tracking',
-      icon: <FaGlobeAmericas />,
-      color: 'teal'
-    }
-  ];
-
   const locations = [
     { name: 'Shanghai Chemical Hub', status: 'normal' },
     { name: 'Maritalization Facility', status: 'normal' },
@@ -77,20 +26,6 @@ const Dashboard = ({ username }) => {
       <div className="dashboard-header">
         <h1>Supply Chain Dashboard</h1>
         <p>Monitor your chemical supply chain resilience and performance</p>
-      </div>
-
-      {/* Stats Grid */}
-      <div className="stats-grid">
-        {statsData.map((stat, index) => (
-          <div key={index} className={`stat-card ${stat.color}`}>
-            <div className="stat-header">
-              <div className="stat-title">{stat.title}</div>
-              <div className="stat-icon">{stat.icon}</div>
-            </div>
-            <div className="stat-value">{stat.value}</div>
-            <div className="stat-description">{stat.description}</div>
-          </div>
-        ))}
       </div>
 
       {/* Main Content Area */}

@@ -1,18 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import './Layout.css';
 import { 
     FiGrid, FiMap, FiGitPullRequest, FiTruck, FiAlertTriangle, 
     FiArchive, FiMapPin, FiBarChart2, FiDatabase, FiUser, FiBell, 
-    FiSearch, FiInfo, FiMail, FiFileText, FiShare2, FiMenu
+    FiSearch, FiInfo, FiMail, FiFileText, FiShare2, FiMenu,
+    FiLogOut, FiSettings, FiMoon, FiSun
 } from 'react-icons/fi';
 
-const Layout = ({ children }) => {
+const Layout = ({ children, username, onLogout, darkMode, setDarkMode }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileRef = useRef(null);
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
   };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setShowProfileMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div className="layout-container">
@@ -72,9 +86,37 @@ const Layout = ({ children }) => {
               <FiBell />
               <span className="notification-dot"></span>
             </button>
-            <button className="action-button profile">
-              <FiUser />
-            </button>
+            <div className="profile-wrapper" ref={profileRef}>
+              <button
+                className="action-button profile"
+                onClick={() => setShowProfileMenu(!showProfileMenu)}
+              >
+                <FiUser />
+              </button>
+              {showProfileMenu && (
+                <div className="profile-dropdown">
+                  <div className="profile-dropdown-header">
+                    <FiUser className="profile-avatar-icon" />
+                    <div>
+                      <p className="profile-name">{username || 'User'}</p>
+                      <p className="profile-role">Member</p>
+                    </div>
+                  </div>
+                  <hr className="dropdown-divider" />
+                  <Link to="/" className="dropdown-item" onClick={() => setShowProfileMenu(false)}>
+                    <FiSettings /> <span>Profile Settings</span>
+                  </Link>
+                  <button className="dropdown-item" onClick={() => setDarkMode(!darkMode)}>
+                    {darkMode ? <FiSun /> : <FiMoon />}
+                    <span>{darkMode ? 'Light Mode' : 'Dark Mode'}</span>
+                  </button>
+                  <hr className="dropdown-divider" />
+                  <button className="dropdown-item logout" onClick={onLogout}>
+                    <FiLogOut /> <span>Logout</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <main className="page-content">

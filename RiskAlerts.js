@@ -7,6 +7,7 @@ import manufacturers from './chemicals_manufacturing_locations.json';
 import globalAlertsData from './alerts.json'; 
 import RiskTree from './RiskTree';
 import GlobalRiskMap from './GlobalRiskMap';
+import { trackPageVisit, trackMaterialSearch } from './activityTracker';
 
 import { FiMap, FiEye, FiMapPin } from 'react-icons/fi';
 import { FaIndustry, FaBoxOpen } from 'react-icons/fa'; // Using Font Awesome icons
@@ -69,6 +70,7 @@ const RiskAlerts = () => {
 
   // Fetch global alerts on initial load
   useEffect(() => {
+    trackPageVisit('Risk Alerts');
     const fetchInitialAlerts = async () => {
       setLoading(true);
       setLoadingMessage('Fetching global risk data...');
@@ -115,12 +117,37 @@ const RiskAlerts = () => {
       
       // Step 3: Fetch dynamic alerts for these specific manufacturers from your backend
       setLoadingMessage(`Analyzing risks for ${manufacturerNames.length} suppliers...`);
-      const alertsResponse = await axios.post(
-        `${config.API_BASE_URL}/getalertformanufacturers`, 
-        { manufacturers: manufacturerNames }
-      );
       
-      const rawSupplierAlerts = alertsResponse.data;
+      // Start async job
+      const jobResponse = await axios.post(
+        `${config.API_BASE_URL}/getalertformanufacturers`, 
+        { manufacturers: manufacturerNames },
+        { timeout: 30000 }
+      );
+
+      let rawSupplierAlerts;
+
+      if (jobResponse.status === 202 && jobResponse.data.job_id) {
+        // Poll for results
+        const jobId = jobResponse.data.job_id;
+        const total = jobResponse.data.total;
+        while (true) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          const statusRes = await axios.get(`${config.API_BASE_URL}/alert_status/${jobId}`, { timeout: 15000 });
+          if (statusRes.data.status === 'completed') {
+            rawSupplierAlerts = statusRes.data.alerts;
+            break;
+          } else if (statusRes.data.status === 'failed') {
+            throw new Error(statusRes.data.error || 'Alert generation failed');
+          } else {
+            const progress = statusRes.data.progress || 0;
+            setLoadingMessage(`Analyzing risks... (${progress}/${total} suppliers processed)`);
+          }
+        }
+      } else {
+        // Direct response (e.g. cached Washington Mills case)
+        rawSupplierAlerts = jobResponse.data;
+      }
 
       // --- START ENRICHMENT for initial view ---
       const enrichedSupplierAlerts = rawSupplierAlerts.map(alert => {
@@ -159,6 +186,7 @@ const RiskAlerts = () => {
   const handleApplySelection = () => {
     if (selectedProduct && selectedManufacturer) {
       const finalSelection = `${selectedProduct}_${selectedManufacturer}`;
+      trackMaterialSearch(selectedProduct, 'Risk Alerts', selectedManufacturer);
       fetchSupplyChainData(finalSelection);
     }
   };

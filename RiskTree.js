@@ -1,11 +1,27 @@
 import React, { useEffect, useRef } from "react";
 import * as d3 from "d3";
-import { FiAlertTriangle } from 'react-icons/fi';
-import ReactDOMServer from 'react-dom/server';
 
-const RiskTree = ({ initialData, alerts, onNodeHover }) => {
+// Helper function to normalize the manufacturer string (e.g., 'celanese_bay city_tx')
+const normalizeManufacturer = (manufacturerId) => {
+    if (!manufacturerId || typeof manufacturerId !== 'string' || manufacturerId.toLowerCase() === 'unknown') 
+        return { manufacturer: 'N/A', location: 'N/A' };
+        
+    const parts = manufacturerId.split('_');
+    // e.g., "celanese_bay city_tx" -> ["celanese", "bay city", "tx"]
+    if (parts.length >= 3) {
+        // Manufacturer Name: capitalize each word and join (e.g., "celanese" -> "Celanese")
+        const manufacturer = parts[0].split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ');
+        // Location: capitalize each word and join with comma-space (e.g., "bay city", "tx" -> "Bay City, TX")
+        const location = parts.slice(1).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ');
+        return { manufacturer: manufacturer, location: location };
+    }
+    // Fallback for names that don't fit the pattern (e.g., global alerts)
+    return { manufacturer: manufacturerId, location: 'N/A' };
+};
+
+
+const RiskTree = ({ initialData, alerts, onNodeHover, scrollable }) => {
   const svgRef = useRef(null);
-  const tooltipRef = useRef(null);
 
   useEffect(() => {
     if (!initialData) return;
@@ -16,7 +32,19 @@ const RiskTree = ({ initialData, alerts, onNodeHover }) => {
     const processNode = (node) => {
         // Find alerts specific to this node's manufacturer from the props
         const nodeAlerts = alerts.filter(a => a.manufacturer === node.manufacturer);
-        node.alerts = nodeAlerts;
+        
+        // --- START MODIFICATION ---
+        // 1. Enrich the alert with the chemical name (node.name) and clean manufacturer/location
+        node.alerts = nodeAlerts.map(alert => {
+            const { manufacturer, location } = normalizeManufacturer(alert.manufacturer); 
+            return {
+                ...alert,
+                chemical_name: node.name, // The material name at this node's level
+                manufacturer_name: manufacturer,
+                location: location // Overwrite generic location with parsed location
+            };
+        });
+        // --- END MODIFICATION ---
         
         // Determine the highest risk level for the node based on its own alerts
         let maxRisk = 0;
@@ -39,22 +67,42 @@ const RiskTree = ({ initialData, alerts, onNodeHover }) => {
     const dataWithRisk = JSON.parse(JSON.stringify(initialData));
     processNode(dataWithRisk);
 
-    const width = 1200;
-    const height = 800;
     const margin = { top: 50, right: 150, bottom: 50, left: 150 };
 
     const svg = d3.select(svgRef.current)
-      .attr("viewBox", `0 0 ${width} ${height}`)
       .style("background", "#f9fafb")
       .style("font-family", "sans-serif");
 
     svg.selectAll("*").remove(); // Clear previous renders
 
-    const treeLayout = d3.tree().size([height - margin.top - margin.bottom, width - margin.left - margin.right]);
     const root = d3.hierarchy(dataWithRisk);
-    treeLayout(root);
+    let translateX = margin.left, translateY = margin.top;
 
-    const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+    if (scrollable) {
+      const treeLayout = d3.tree().nodeSize([50, 300]);
+      treeLayout(root);
+      let x0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      root.each(d => {
+        if (d.x < x0) x0 = d.x;
+        if (d.x > x1) x1 = d.x;
+        if (d.y > y1) y1 = d.y;
+      });
+      const svgW = y1 + margin.left + margin.right;
+      const svgH = (x1 - x0) + margin.top + margin.bottom;
+      translateY = margin.top - x0;
+      svg.attr("viewBox", null).attr("width", svgW).attr("height", svgH);
+    } else {
+      const width = 1200;
+      const height = 800;
+      const treeLayout = d3.tree().size([
+        height - margin.top - margin.bottom,
+        width - margin.left - margin.right
+      ]);
+      treeLayout(root);
+      svg.attr("viewBox", `0 0 ${width} ${height}`);
+    }
+
+    const g = svg.append("g").attr("transform", `translate(${translateX},${translateY})`);
     
     // Color function based on risk level
     const riskColor = (level) => {
@@ -82,34 +130,12 @@ const RiskTree = ({ initialData, alerts, onNodeHover }) => {
       .attr("class", "node")
       .attr("transform", d => `translate(${d.y},${d.x})`)
       .on("mouseover", (event, d) => {
-        onNodeHover(d.data.alerts); // Update the parent's alert feed
-        tooltip.style("display", "block");
-        
-        const alertIcon = ReactDOMServer.renderToString(<FiAlertTriangle />);
-        const alertList = d.data.alerts.length > 0
-            ? d.data.alerts.map(a => `
-                <div class="tooltip-alert-item ${a.risk_level.toLowerCase()}">
-                    <strong>${a.category} (${a.risk_level})</strong>: ${a.details}
-                </div>`).join('')
-            : '<div>No specific alerts for this supplier.</div>';
-
-        tooltip.html(`
-            <div class="tooltip-header">${d.data.name}</div>
-            <div class="tooltip-subheader">${d.data.manufacturer || 'Component'}</div>
-            <div class="tooltip-alerts-container">
-                <div class="tooltip-alerts-title">${alertIcon} Active Alerts</div>
-                ${alertList}
-            </div>
-        `);
-      })
-      .on("mousemove", (event) => {
-        tooltip
-          .style("left", `${event.pageX + 15}px`)
-          .style("top", `${event.pageY - 15}px`);
+        // Pass the enriched alerts to the parent component
+        onNodeHover(d.data.alerts); 
       })
       .on("mouseout", () => {
-        onNodeHover(null); // Passing null signals to reset the feed
-        tooltip.style("display", "none");
+        // This signals to reset the feed to all alerts for the supply chain
+        onNodeHover(null); 
       });
 
     // Draw circles for each node
@@ -130,13 +156,11 @@ const RiskTree = ({ initialData, alerts, onNodeHover }) => {
       .clone(true).lower()
       .attr("stroke", "white").attr("stroke-width", 4);
 
-    const tooltip = d3.select(tooltipRef.current);
-  }, [initialData, alerts, onNodeHover]);
+  }, [initialData, alerts, onNodeHover, scrollable]);
 
   return (
     <>
-      <svg ref={svgRef}></svg>
-      <div ref={tooltipRef} className="risk-tree-tooltip"></div>
+      <svg ref={svgRef} style={scrollable ? { display: 'block' } : {}}></svg>
     </>
   );
 };

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Tree from './Tree';
 import ManufacturerTree from './ManufacturerTree';
 import RiskTree from './RiskTree';
 import config from './config';
+import { trackPageVisit, trackAction } from './activityTracker';
 import { FiUpload, FiRefreshCw, FiEye, FiCheckCircle, FiMap, FiAlertTriangle } from 'react-icons/fi';
 import './SupplyChainMap.css';
 
@@ -17,6 +18,8 @@ const CompleteNetwork = () => {
   const [showManufacturerView, setShowManufacturerView] = useState(false);
   const [showRiskView, setShowRiskView] = useState(false);
   const [hoveredAlerts, setHoveredAlerts] = useState(null); // To store alerts for the hovered node
+
+  useEffect(() => { trackPageVisit('Complete Network'); }, []);
 
   // Helper to extract manufacturers from the generated tree
   const extractManufacturers = (node) => {
@@ -52,8 +55,9 @@ const CompleteNetwork = () => {
     reader.onload = async (e) => {
       try {
         const jsonContent = JSON.parse(e.target.result);
-        const response = await axios.post(`${config.API_BASE_URL}/complete_network`, jsonContent);
+        const response = await axios.post(`${config.API_BASE_URL}/complete_network`, jsonContent, { timeout: 600000 });
         setTreeData(response.data);
+        trackAction('Network Completed', { product: jsonContent.name || 'Unknown' });
       } catch (err) {
         setError("Failed to process network. Check JSON validity and server connection.");
       } finally {
@@ -68,11 +72,29 @@ const CompleteNetwork = () => {
     setAnalyzingRisk(true);
     try {
       const manufacturerIds = [...new Set(extractManufacturers(treeData))];
-      const response = await axios.post(`${config.API_BASE_URL}/getalertformanufacturers`, {
+      const jobResponse = await axios.post(`${config.API_BASE_URL}/getalertformanufacturers`, {
         manufacturers: manufacturerIds 
-      });
-      setAlerts(response.data);
-      setShowRiskView(true); // Switch to Risk View once data is ready
+      }, { timeout: 30000 });
+
+      let alertsData;
+      if (jobResponse.status === 202 && jobResponse.data.job_id) {
+        const jobId = jobResponse.data.job_id;
+        while (true) {
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          const statusRes = await axios.get(`${config.API_BASE_URL}/alert_status/${jobId}`, { timeout: 15000 });
+          if (statusRes.data.status === 'completed') {
+            alertsData = statusRes.data.alerts;
+            break;
+          } else if (statusRes.data.status === 'failed') {
+            throw new Error(statusRes.data.error || 'Alert generation failed');
+          }
+        }
+      } else {
+        alertsData = jobResponse.data;
+      }
+
+      setAlerts(alertsData);
+      setShowRiskView(true);
     } catch (err) {
       setError("Failed to fetch risk alerts.");
     } finally {

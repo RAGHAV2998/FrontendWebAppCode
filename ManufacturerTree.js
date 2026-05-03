@@ -9,7 +9,7 @@ const collapseAllNodes = (node) => {
   }
 };
 
-const ManufacturerTree = ({ initialData, isExpanded }) => {
+const ManufacturerTree = ({ initialData, isExpanded, scrollable }) => {
   const svgRef = useRef(null);
   const [popup, setPopup] = useState({
     visible: false,
@@ -46,31 +46,46 @@ const ManufacturerTree = ({ initialData, isExpanded }) => {
   useEffect(() => {
     if (!data) return;
 
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+    const margin = { top: 60, right: 200, bottom: 60, left: 200 };
 
     const svg = d3
       .select(svgRef.current)
-      .attr("viewBox", [0, 0, width, height])
       .style("background", "#f3f6f9")
       .style("font-family", "sans-serif");
 
     // Clear previous elements to prevent overlapping on re-renders
     svg.selectAll("*").remove();
 
-    // Define margins to keep text inside the box
-    const margin = { top: 60, right: 200, bottom: 60, left: 200 };
-    const innerWidth = width - margin.left - margin.right;
-    const innerHeight = height - margin.top - margin.bottom;
-
-    const treeLayout = d3.tree().size([innerHeight, innerWidth]);
     const root = d3.hierarchy(data);
-    treeLayout(root);
+    let translateX = margin.left, translateY = margin.top;
+
+    if (scrollable) {
+      const treeLayout = d3.tree().nodeSize([50, 300]);
+      treeLayout(root);
+      let x0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+      root.each(d => {
+        if (d.x < x0) x0 = d.x;
+        if (d.x > x1) x1 = d.x;
+        if (d.y > y1) y1 = d.y;
+      });
+      const svgW = y1 + margin.left + margin.right;
+      const svgH = (x1 - x0) + margin.top + margin.bottom;
+      translateY = margin.top - x0;
+      svg.attr("viewBox", null).attr("width", svgW).attr("height", svgH);
+    } else {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const treeLayout = d3.tree().size([innerHeight, innerWidth]);
+      treeLayout(root);
+      svg.attr("viewBox", [0, 0, width, height]);
+    }
 
     // Create a main group shifted by the top/left margins
     const g = svg
       .append("g")
-      .attr("transform", `translate(${margin.left},${margin.top})`);
+      .attr("transform", `translate(${translateX},${translateY})`);
 
     // Draw links
     g.selectAll(".link")
@@ -144,11 +159,11 @@ const ManufacturerTree = ({ initialData, isExpanded }) => {
     return () => {
       svg.selectAll("*").remove();
     };
-  }, [data, toggleNode]);
+  }, [data, toggleNode, scrollable]);
 
   return (
     <>
-      <svg ref={svgRef} style={{ width: "100%", height: "70vh" }}></svg>
+      <svg ref={svgRef} style={scrollable ? { display: 'block' } : { width: "100%", height: "70vh" }}></svg>
       {popup.visible && (
         <div
           style={{

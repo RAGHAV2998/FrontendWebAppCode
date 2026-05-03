@@ -39,6 +39,10 @@ body {
   padding: 0;
 }
 
+[data-theme="dark"] .center-container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
 .center-container {
   min-height: 100vh;
   display: flex;
